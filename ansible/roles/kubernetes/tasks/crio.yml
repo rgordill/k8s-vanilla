@@ -1,0 +1,50 @@
+---
+# CRI-O installation and configuration
+
+- name: Install CRI-O, crun and cri-tools
+  ansible.builtin.dnf:
+    name:
+      - cri-o
+      - crun
+      - cri-tools
+    state: present
+
+- name: Create CRI-O configuration directory
+  ansible.builtin.file:
+    path: /etc/crio/crio.conf.d
+    state: directory
+    mode: '0755'
+
+- name: Configure CRI-O to use crun
+  ansible.builtin.template:
+    src: crio-crun.conf.j2
+    dest: /etc/crio/crio.conf.d/10-crun.conf
+    mode: '0644'
+  notify: Restart CRI-O
+
+- name: Configure CRI-O cgroup settings
+  ansible.builtin.template:
+    src: crio-cgroup.conf.j2
+    dest: /etc/crio/crio.conf.d/20-cgroup.conf
+    mode: '0644'
+  notify: Restart CRI-O
+
+- name: Enable and start CRI-O
+  ansible.builtin.systemd:
+    name: crio
+    state: started
+    enabled: true
+    daemon_reload: true
+
+- name: Wait for CRI-O socket to be available
+  ansible.builtin.wait_for:
+    path: /var/run/crio/crio.sock
+    timeout: "{{ kubernetes_crio_ready_timeout }}"
+
+- name: Verify CRI-O is running
+  ansible.builtin.command: crictl info
+  register: kubernetes_crio_info
+  changed_when: false
+  retries: 5
+  delay: 5
+  until: kubernetes_crio_info.rc == 0

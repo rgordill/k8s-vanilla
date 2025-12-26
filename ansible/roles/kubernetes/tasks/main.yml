@@ -1,0 +1,20 @@
+---
+# Main tasks for Kubernetes single-node setup with kubeadm
+
+- name: Include prerequisite tasks
+  ansible.builtin.include_tasks: prerequisites.yml
+
+- name: Include CRI-O installation tasks
+  ansible.builtin.include_tasks: crio.yml
+
+- name: Include Kubernetes installation tasks
+  ansible.builtin.include_tasks: kubernetes.yml
+
+- name: Include kubeadm init tasks
+  ansible.builtin.include_tasks: kubeadm_init.yml
+
+- name: Include CNI installation tasks
+  ansible.builtin.include_tasks: cni.yml
+
+- name: Include post-installation tasks
+  ansible.builtin.include_tasks: post_install.yml

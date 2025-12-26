@@ -1,0 +1,12 @@
+---
+# CNI plugin installation
+
+- name: Install Flannel CNI
+  kubernetes.core.k8s:
+    state: present
+    src: "{{ flannel_manifest_url }}"
+    kubeconfig: /root/.kube/config
+  when: cni_plugin == "flannel"
+
+
+

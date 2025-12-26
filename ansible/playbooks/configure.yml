@@ -1,0 +1,24 @@
+---
+# Playbook to configure Kubernetes on provisioned VMs
+
+- name: Configure Kubernetes single-node cluster
+  hosts: k8s_nodes
+  become: true
+  gather_facts: true
+
+  roles:
+    - kubernetes
+
+  post_tasks:
+    - name: Display completion message
+      ansible.builtin.debug:
+        msg:
+          - "=============================================="
+          - "Kubernetes single-node cluster is ready!"
+          - "=============================================="
+          - "SSH: ssh {{ ansible_user }}@{{ ansible_host }}"
+          - "Get kubeconfig: scp {{ ansible_user }}@{{ ansible_host }}:/home/{{ ansible_user }}/.kube/config ./kubeconfig"
+          - "=============================================="
+
+
+

@@ -1,0 +1,26 @@
+---
+# Playbook to destroy infrastructure with Terraform
+
+- name: Destroy infrastructure with Terraform
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    terraform_dir: "{{ playbook_dir }}/../../terraform"
+
+  tasks:
+    - name: Destroy Terraform infrastructure
+      ansible.builtin.command:
+        cmd: terraform destroy -auto-approve
+        chdir: "{{ terraform_dir }}"
+      register: terraform_destroy
+      changed_when: "'Destroy complete!' in terraform_destroy.stdout"
+
+    - name: Display destruction result
+      ansible.builtin.debug:
+        msg: "Infrastructure destroyed successfully"
+      when: terraform_destroy.changed
+
+
+

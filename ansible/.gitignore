@@ -1,0 +1,37 @@
+# Retry files
+*.retry
+
+# Compiled Python files
+*.pyc
+__pycache__/
+
+# Ansible Galaxy roles
+roles/*/
+!roles/kubernetes/
+
+# Ansible collections
+collections/
+
+# Vault password files
+.vault_pass
+.vault_password
+*.vault
+
+# Local inventory cache
+.cache/
+fact_cache/
+
+# Logs
+*.log
+
+# IDE/Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+

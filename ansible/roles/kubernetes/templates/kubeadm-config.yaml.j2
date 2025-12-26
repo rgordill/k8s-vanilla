@@ -1,0 +1,24 @@
+apiVersion: {{ kubeadm_api_version }}
+kind: InitConfiguration
+localAPIEndpoint:
+  advertiseAddress: "0.0.0.0"
+  bindPort: 6443
+nodeRegistration:
+  criSocket: unix:///var/run/crio/crio.sock
+  imagePullPolicy: IfNotPresent
+  imagePullSerial: true
+  taints: []
+---
+apiVersion: {{ kubeadm_api_version }}
+kind: ClusterConfiguration
+kubernetesVersion: stable
+networking:
+  podSubnet: "{{ pod_network_cidr }}"
+  serviceSubnet: "{{ service_cidr }}"
+---
+apiVersion: {{ kubelet_config_version }}
+kind: KubeletConfiguration
+cgroupDriver: systemd
+
+
+

@@ -1,0 +1,52 @@
+---
+# Post-installation tasks
+
+- name: Wait for node to be Ready
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Node
+    kubeconfig: /root/.kube/config
+  register: kubernetes_node_ready
+  retries: "{{ (node_ready_timeout / 10) | int }}"
+  delay: 10
+  until: >
+    kubernetes_node_ready.resources | length > 0 and
+    kubernetes_node_ready.resources | map(attribute='status.conditions') | flatten |
+    selectattr('type', 'equalto', 'Ready') | selectattr('status', 'equalto', 'True') | list | length > 0
+
+- name: Get node status
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Node
+    kubeconfig: /root/.kube/config
+  register: kubernetes_node_status
+
+- name: Display node status
+  ansible.builtin.debug:
+    msg: "{{ kubernetes_node_status.resources | map(attribute='metadata.name') | list }}"
+
+- name: Get all pods status
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Pod
+    kubeconfig: /root/.kube/config
+  register: kubernetes_pods_status
+
+- name: Display pods status
+  ansible.builtin.debug:
+    msg: "{{ kubernetes_pods_status.resources | map(attribute='metadata.name') | list }}"
+
+- name: Get CRI-O runtime info
+  ansible.builtin.command: crictl info
+  register: kubernetes_crio_runtime_info
+  changed_when: false
+
+- name: Display CRI-O info
+  ansible.builtin.debug:
+    msg: "Container Runtime: CRI-O with {{ oci_runtime }}"
+
+- name: Create installation complete marker
+  ansible.builtin.file:
+    path: /var/log/kubernetes-setup-complete
+    state: touch
+    mode: '0644'

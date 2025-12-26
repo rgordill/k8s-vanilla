@@ -1,0 +1,19 @@
+---
+# Main playbook - provisions infrastructure and configures Kubernetes
+
+- name: Provision infrastructure
+  ansible.builtin.import_playbook: provision.yml
+
+- name: Refresh inventory after provisioning
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Refresh dynamic inventory
+      ansible.builtin.meta: refresh_inventory
+
+- name: Configure Kubernetes
+  ansible.builtin.import_playbook: configure.yml
+
+
+

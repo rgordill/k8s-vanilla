@@ -1,0 +1,10 @@
+[crio.runtime]
+default_runtime = "{{ oci_runtime }}"
+
+[crio.runtime.runtimes.{{ oci_runtime }}]
+runtime_path = "/usr/bin/{{ oci_runtime }}"
+runtime_type = "oci"
+runtime_root = "/run/{{ oci_runtime }}"
+
+
+

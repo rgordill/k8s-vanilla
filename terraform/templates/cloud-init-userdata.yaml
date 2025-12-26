@@ -1,0 +1,35 @@
+#cloud-config
+# Cloud-init configuration - Basic VM setup (Kubernetes configured by Ansible)
+
+hostname: ${hostname}
+fqdn: ${hostname}
+manage_etc_hosts: true
+
+# User configuration
+users:
+  - name: fedora
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    groups: wheel, adm, systemd-journal
+    shell: /bin/bash
+    lock_passwd: false
+    ssh_authorized_keys:
+      - ${ssh_public_key}
+
+# Set password for fedora user
+chpasswd:
+  list: |
+    fedora:${password}
+  expire: false
+
+ssh_pwauth: true
+
+# Basic packages needed for Ansible
+packages:
+  - python3
+  - python3-dnf
+
+# Final message
+final_message: "Cloud-init completed. VM ready for Ansible configuration."
+
+
+
