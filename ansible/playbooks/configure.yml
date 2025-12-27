@@ -8,6 +8,7 @@
 
   roles:
     - kubernetes
+    - argocd
 
   post_tasks:
     - name: Display completion message
@@ -15,6 +16,7 @@
         msg:
           - "=============================================="
           - "Kubernetes single-node cluster is ready!"
+          - "ArgoCD Core has been deployed!"
           - "=============================================="
           - "SSH: ssh {{ ansible_user }}@{{ ansible_host }}"
           - "Get kubeconfig: scp {{ ansible_user }}@{{ ansible_host }}:/home/{{ ansible_user }}/.kube/config ./kubeconfig"

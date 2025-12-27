@@ -15,6 +15,15 @@ kubernetesVersion: stable
 networking:
   podSubnet: "{{ pod_network_cidr }}"
   serviceSubnet: "{{ service_cidr }}"
+dns:
+  disabled: false
+---
+apiVersion: coredns.kubeadm.io/v1
+kind: CoreDNSConfiguration
+metadata:
+  name: coredns
+spec:
+  replicas: {{ coredns_replicas }}
 ---
 apiVersion: {{ kubelet_config_version }}
 kind: KubeletConfiguration

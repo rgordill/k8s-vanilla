@@ -14,6 +14,21 @@
     kubernetes_node_ready.resources | map(attribute='status.conditions') | flatten |
     selectattr('type', 'equalto', 'Ready') | selectattr('status', 'equalto', 'True') | list | length > 0
 
+- name: Wait for CoreDNS to be ready
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    name: coredns
+    namespace: kube-system
+    kubeconfig: /root/.kube/config
+  register: coredns_deployment
+  retries: "{{ (coredns_ready_timeout / 10) | int }}"
+  delay: 10
+  until: >
+    coredns_deployment.resources | length > 0 and
+    coredns_deployment.resources[0].status.readyReplicas is defined and
+    coredns_deployment.resources[0].status.readyReplicas == coredns_deployment.resources[0].spec.replicas
+
 - name: Get node status
   kubernetes.core.k8s_info:
     api_version: v1
@@ -35,6 +50,10 @@
 - name: Display pods status
   ansible.builtin.debug:
     msg: "{{ kubernetes_pods_status.resources | map(attribute='metadata.name') | list }}"
+
+- name: Display CoreDNS status
+  ansible.builtin.debug:
+    msg: "CoreDNS: {{ coredns_deployment.resources[0].status.readyReplicas }}/{{ coredns_deployment.resources[0].spec.replicas }} replicas ready"
 
 - name: Get CRI-O runtime info
   ansible.builtin.command: crictl info

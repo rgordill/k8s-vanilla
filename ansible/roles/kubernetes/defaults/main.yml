@@ -12,6 +12,9 @@ service_cidr: "10.96.0.0/12"
 container_runtime: "crio"
 oci_runtime: "crun"
 
+# CoreDNS configuration
+coredns_replicas: 1
+
 # CNI plugin
 cni_plugin: "flannel"
 flannel_manifest_url: "https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml"
@@ -28,5 +31,6 @@ disable_firewalld: true
 
 # Wait timeouts (in seconds)
 kubernetes_crio_ready_timeout: 60
-api_server_ready_timeout: 20
+api_server_ready_timeout: 300
 node_ready_timeout: 600
+coredns_ready_timeout: 300

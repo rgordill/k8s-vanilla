@@ -22,6 +22,11 @@
   register: kube_proxy_result
   changed_when: "'Applied essential addon: kube-proxy' in kube_proxy_result.stdout"
 
+- name: Deploy CoreDNS addon
+  ansible.builtin.command: kubeadm init phase addon coredns --config /root/kubeadm-config.yaml
+  register: coredns_result
+  changed_when: "'Applied essential addon: coredns' in coredns_result.stdout"
+
 - name: Ensure kubeadm cluster-admins ClusterRoleBinding exists
   kubernetes.core.k8s:
     kubeconfig: /etc/kubernetes/super-admin.conf

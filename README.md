@@ -32,7 +32,7 @@ This project deploys a single-node Kubernetes cluster using kubeadm on a Fedora 
 ## Project Structure
 
 ```
-terraform-kubernetes/
+k8s-vanilla/
 ├── terraform/                    # Infrastructure as Code
 │   ├── main.tf                   # VM, network, storage resources
 │   ├── variables.tf              # Input variables
@@ -54,21 +54,25 @@ terraform-kubernetes/
 │   │   ├── configure.yml         # Kubernetes configuration
 │   │   └── destroy.yml           # Teardown infrastructure
 │   └── roles/
-│       └── kubernetes/           # Kubernetes installation role
+│       ├── kubernetes/           # Kubernetes installation role
+│       │   ├── defaults/main.yml
+│       │   ├── tasks/
+│       │   │   ├── main.yml
+│       │   │   ├── prerequisites.yml
+│       │   │   ├── crio.yml
+│       │   │   ├── kubernetes.yml
+│       │   │   ├── kubeadm_init.yml
+│       │   │   ├── cni.yml
+│       │   │   └── post_install.yml
+│       │   ├── handlers/main.yml
+│       │   └── templates/
+│       │       ├── kubeadm-config.yaml.j2
+│       │       ├── crio-crun.conf.j2
+│       │       └── crio-cgroup.conf.j2
+│       └── argocd/               # ArgoCD Core installation role
 │           ├── defaults/main.yml
-│           ├── tasks/
-│           │   ├── main.yml
-│           │   ├── prerequisites.yml
-│           │   ├── crio.yml
-│           │   ├── kubernetes.yml
-│           │   ├── kubeadm_init.yml
-│           │   ├── cni.yml
-│           │   └── post_install.yml
-│           ├── handlers/main.yml
-│           └── templates/
-│               ├── kubeadm-config.yaml.j2
-│               ├── crio-crun.conf.j2
-│               └── crio-cgroup.conf.j2
+│           ├── tasks/main.yml
+│           └── handlers/main.yml
 │
 └── README.md
 ```
@@ -126,6 +130,7 @@ This will:
 1. Initialize and apply Terraform to create the VM
 2. Use dynamic inventory from Terraform state
 3. Configure Kubernetes using Ansible
+4. Deploy ArgoCD Core for GitOps
 
 ## Usage
 
@@ -189,6 +194,8 @@ kubectl get nodes
 - **CRI-O** container runtime with **crun** OCI runtime
 - **kubeadm, kubelet, kubectl** - Kubernetes v1.35
 - **Flannel** CNI for pod networking
+- **CoreDNS** for cluster DNS
+- **ArgoCD Core** for GitOps (Application Controller, Repo Server, Redis)
 
 ## Configuration
 
@@ -202,7 +209,7 @@ kubectl get nodes
 | `vcpus` | CPU cores | `4` |
 | `main_disk_size` | Disk size | `30GB` |
 
-### Ansible Variables (`ansible/roles/kubernetes/defaults/main.yml`)
+### Kubernetes Variables (`ansible/roles/kubernetes/defaults/main.yml`)
 
 | Variable | Description | Default |
 |----------|-------------|---------|
@@ -211,6 +218,17 @@ kubectl get nodes
 | `container_runtime` | Runtime | `crio` |
 | `oci_runtime` | OCI runtime | `crun` |
 | `cni_plugin` | CNI plugin | `flannel` |
+| `coredns_replicas` | CoreDNS replicas | `1` |
+
+### ArgoCD Variables (`ansible/roles/argocd/defaults/main.yml`)
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `argocd_chart_version` | Helm chart version | `7.7.16` |
+| `argocd_namespace` | Namespace | `argocd` |
+| `argocd_release_name` | Helm release name | `argocd` |
+| `argocd_core_install` | Core install (no UI) | `true` |
+| `argocd_ready_timeout` | Deployment timeout | `300` |
 
 ## Troubleshooting
 
@@ -242,4 +260,46 @@ ssh fedora@192.168.200.10
 sudo journalctl -u kubelet -f
 kubectl get pods -A
 crictl info
+```
+
+### ArgoCD issues
+
+```bash
+kubectl get pods -n argocd
+kubectl logs -n argocd -l app.kubernetes.io/name=argocd-application-controller
+kubectl logs -n argocd -l app.kubernetes.io/name=argocd-repo-server
+```
+
+## Using ArgoCD Core
+
+ArgoCD Core is a lightweight installation without the UI/API server. Manage applications using kubectl:
+
+### Create an Application
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: my-app
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/your-org/your-repo.git
+    targetRevision: HEAD
+    path: manifests
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: my-app
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+```
+
+### Check Application Status
+
+```bash
+kubectl get applications -n argocd
+kubectl describe application my-app -n argocd
 ```

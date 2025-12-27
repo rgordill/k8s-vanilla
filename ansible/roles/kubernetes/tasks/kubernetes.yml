@@ -29,6 +29,3 @@
     src: kubeadm-config.yaml.j2
     dest: /root/kubeadm-config.yaml
     mode: '0644'
-
-
-
