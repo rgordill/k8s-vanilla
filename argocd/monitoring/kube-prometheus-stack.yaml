@@ -167,6 +167,7 @@ spec:
       - PrunePropagationPolicy=foreground
       - PruneLast=true
       - ServerSideApply=true
+      - RespectIgnoreDifferences=true
     retry:
       limit: 5
       backoff:
@@ -184,4 +185,17 @@ spec:
       kind: ValidatingWebhookConfiguration
       jqPathExpressions:
         - '.webhooks[]?.clientConfig.caBundle'
+    # Ignore status fields not in CRD schema (Prometheus Operator issue)
+    - group: monitoring.coreos.com
+      kind: Prometheus
+      jqPathExpressions:
+        - '.status'
+    - group: monitoring.coreos.com
+      kind: Alertmanager
+      jqPathExpressions:
+        - '.status'
+    - group: monitoring.coreos.com
+      kind: ThanosRuler
+      jqPathExpressions:
+        - '.status'
 
