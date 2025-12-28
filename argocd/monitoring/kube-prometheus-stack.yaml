@@ -1,0 +1,187 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kube-prometheus-stack
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: kube-prometheus-stack
+    targetRevision: 68.4.2
+    helm:
+      releaseName: kube-prometheus-stack
+      valueFiles:
+        - values.yaml
+      valuesObject:
+        # Grafana configuration
+        grafana:
+          enabled: true
+          adminPassword: admin  # Change in production!
+          persistence:
+            enabled: true
+            size: 5Gi
+          service:
+            type: ClusterIP
+          # Default dashboards
+          defaultDashboardsEnabled: true
+          defaultDashboardsTimezone: utc
+
+        # Prometheus configuration
+        prometheus:
+          enabled: true
+          prometheusSpec:
+            retention: 15d
+            retentionSize: "10GB"
+            resources:
+              requests:
+                cpu: 200m
+                memory: 512Mi
+              limits:
+                cpu: 1000m
+                memory: 2Gi
+            storageSpec:
+              volumeClaimTemplate:
+                spec:
+                  accessModes:
+                    - ReadWriteOnce
+                  resources:
+                    requests:
+                      storage: 20Gi
+            # Service monitors for kubernetes components
+            serviceMonitorSelectorNilUsesHelmValues: false
+            podMonitorSelectorNilUsesHelmValues: false
+            ruleSelectorNilUsesHelmValues: false
+
+        # Alertmanager configuration
+        alertmanager:
+          enabled: true
+          alertmanagerSpec:
+            retention: 120h
+            storage:
+              volumeClaimTemplate:
+                spec:
+                  accessModes:
+                    - ReadWriteOnce
+                  resources:
+                    requests:
+                      storage: 5Gi
+            resources:
+              requests:
+                cpu: 50m
+                memory: 64Mi
+              limits:
+                cpu: 200m
+                memory: 256Mi
+
+        # kube-state-metrics configuration
+        kube-state-metrics:
+          enabled: true
+
+        # Prometheus Node Exporter configuration
+        prometheus-node-exporter:
+          enabled: true
+
+        # Prometheus Operator configuration
+        prometheusOperator:
+          enabled: true
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+
+        # Kubernetes component monitors
+        kubeApiServer:
+          enabled: true
+        kubeControllerManager:
+          enabled: true
+          endpoints: []  # Auto-discover
+        kubeScheduler:
+          enabled: true
+          endpoints: []  # Auto-discover
+        kubeProxy:
+          enabled: true
+        kubeEtcd:
+          enabled: true
+          endpoints: []  # Auto-discover
+        kubelet:
+          enabled: true
+        coreDns:
+          enabled: true
+
+        # Default PrometheusRules
+        defaultRules:
+          create: true
+          rules:
+            alertmanager: true
+            etcd: true
+            configReloaders: true
+            general: true
+            k8sContainerCpuUsageSecondsTotal: true
+            k8sContainerMemoryCache: true
+            k8sContainerMemoryRss: true
+            k8sContainerMemorySwap: true
+            k8sContainerResource: true
+            k8sPodOwner: true
+            kubeApiserverAvailability: true
+            kubeApiserverBurnrate: true
+            kubeApiserverHistogram: true
+            kubeApiserverSlos: true
+            kubeControllerManager: true
+            kubelet: true
+            kubeProxy: true
+            kubePrometheusGeneral: true
+            kubePrometheusNodeRecording: true
+            kubernetesApps: true
+            kubernetesResources: true
+            kubernetesStorage: true
+            kubernetesSystem: true
+            kubeSchedulerAlerting: true
+            kubeSchedulerRecording: true
+            kubeStateMetrics: true
+            network: true
+            node: true
+            nodeExporterAlerting: true
+            nodeExporterRecording: true
+            prometheus: true
+            prometheusOperator: true
+            windows: false
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+
+  # Ignore differences that are managed by the controller
+  ignoreDifferences:
+    - group: admissionregistration.k8s.io
+      kind: MutatingWebhookConfiguration
+      jqPathExpressions:
+        - '.webhooks[]?.clientConfig.caBundle'
+    - group: admissionregistration.k8s.io
+      kind: ValidatingWebhookConfiguration
+      jqPathExpressions:
+        - '.webhooks[]?.clientConfig.caBundle'
+

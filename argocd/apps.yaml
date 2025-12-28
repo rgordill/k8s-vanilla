@@ -1,0 +1,29 @@
+---
+# App of Apps pattern - Deploy all applications from this repository
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cluster-apps
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    # Update this to your Git repository URL
+    repoURL: https://github.com/rgordill/k8s-vanilla.git
+    targetRevision: HEAD
+    path: argocd
+    directory:
+      recurse: true
+      exclude: '{apps.yaml,**/README.md}'
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+

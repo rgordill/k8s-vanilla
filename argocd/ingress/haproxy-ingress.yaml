@@ -1,0 +1,137 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: haproxy-ingress
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://haproxytech.github.io/helm-charts
+    chart: kubernetes-ingress
+    targetRevision: 1.42.0
+    helm:
+      releaseName: haproxy-ingress
+      valuesObject:
+        # Controller configuration
+        controller:
+          # Enable Gateway API support
+          gatewayControllerName: haproxy.org/gateway-controller
+
+          # Single node deployment
+          replicaCount: 1
+
+          # Use DaemonSet for hostPort binding
+          kind: DaemonSet
+
+          # Ingress class configuration
+          ingressClass: haproxy
+          ingressClassResource:
+            name: haproxy
+            enabled: true
+            default: true
+            controllerValue: haproxy.org/ingress-controller
+
+          # Internal ClusterIP service
+          service:
+            enabled: true
+            type: ClusterIP
+
+          # Use hostPort for direct node access
+          daemonset:
+            useHostPort: true
+            hostPorts:
+              http: 80
+              https: 443
+              stat: 1024
+
+          # Container ports
+          containerPort:
+            http: 80
+            https: 443
+            stat: 1024
+
+          # Resource limits
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+
+          # Logging configuration
+          logging:
+            level: info
+            traffic:
+              address: stdout
+              format: raw
+              facility: daemon
+
+          # Config snippets for advanced configuration
+          config:
+            # Global HAProxy configuration
+            global-config-snippet: |
+              tune.ssl.default-dh-param 2048
+              ssl-default-bind-ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384
+              ssl-default-bind-options no-sslv3 no-tlsv10 no-tlsv11
+
+            # Defaults configuration
+            timeout-connect: 5s
+            timeout-client: 50s
+            timeout-server: 50s
+            timeout-http-request: 10s
+            timeout-http-keep-alive: 60s
+
+          # Prometheus ServiceMonitor
+          serviceMonitor:
+            enabled: true
+            endpoints:
+              - port: stat
+                path: /metrics
+                interval: 30s
+
+          # Node selector (optional)
+          nodeSelector: {}
+
+          # Tolerations - allow scheduling on control-plane if needed
+          tolerations:
+            - key: node-role.kubernetes.io/control-plane
+              operator: Exists
+              effect: NoSchedule
+
+        # Default backend disabled
+        defaultBackend:
+          enabled: false
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: haproxy-controller
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+
+  ignoreDifferences:
+    - group: admissionregistration.k8s.io
+      kind: ValidatingWebhookConfiguration
+      jqPathExpressions:
+        - '.webhooks[]?.clientConfig.caBundle'
+
