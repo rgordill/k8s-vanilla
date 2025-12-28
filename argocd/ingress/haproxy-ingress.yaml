@@ -49,10 +49,10 @@ spec:
               https: 443
               stat: 1024
 
-          # Container ports
+          # Container ports (use high ports to avoid privileged port binding)
           containerPort:
-            http: 80
-            https: 443
+            http: 8080
+            https: 8443
             stat: 1024
 
           # Resource limits
