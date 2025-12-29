@@ -17,6 +17,17 @@ networking:
   serviceSubnet: "{{ service_cidr }}"
 dns:
   disabled: false
+# Enable metrics endpoints for Prometheus monitoring
+etcd:
+  local:
+    extraArgs:
+      listen-metrics-urls: "http://0.0.0.0:2381"
+controllerManager:
+  extraArgs:
+    bind-address: "0.0.0.0"
+scheduler:
+  extraArgs:
+    bind-address: "0.0.0.0"
 ---
 apiVersion: coredns.kubeadm.io/v1
 kind: CoreDNSConfiguration
@@ -28,6 +39,10 @@ spec:
 apiVersion: {{ kubelet_config_version }}
 kind: KubeletConfiguration
 cgroupDriver: systemd
+---
+apiVersion: kubeproxy.config.k8s.io/v1alpha1
+kind: KubeProxyConfiguration
+metricsBindAddress: "0.0.0.0:10249"
 
 
 
