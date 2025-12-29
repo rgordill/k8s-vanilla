@@ -1,6 +1,6 @@
 ---
-# GatewayClass for HAProxy (Gateway API v1)
-apiVersion: gateway.networking.k8s.io/v1
+# GatewayClass for HAProxy (Gateway API v0.5.1 experimental)
+apiVersion: gateway.networking.k8s.io/v1alpha2
 kind: GatewayClass
 metadata:
   name: haproxy
@@ -10,7 +10,7 @@ spec:
   controllerName: haproxy.org/gateway-controller
 ---
 # Gateway with HTTP listener - accepts routes from all namespaces
-apiVersion: gateway.networking.k8s.io/v1
+apiVersion: gateway.networking.k8s.io/v1alpha2
 kind: Gateway
 metadata:
   name: haproxy-gateway
