@@ -29,27 +29,14 @@ spec:
           # Default dashboards
           defaultDashboardsEnabled: true
           defaultDashboardsTimezone: utc
-          # Gateway API HTTPRoute for Grafana 
-          extraObjects:
-            - apiVersion: gateway.networking.k8s.io/v1alpha2
-              kind: HTTPRoute
-              metadata:
-                name: grafana-route
-                namespace: monitoring
-              spec:
-                parentRefs:
-                  - name: haproxy-gateway
-                    namespace: haproxy-controller
-                hostnames:
-                  - grafana.k8s.atik.demo
-                rules:
-                  - matches:
-                      - path:
-                          type: PathPrefix
-                          value: /
-                    backendRefs:
-                      - name: kube-prometheus-stack-grafana
-                        port: 80
+          # Ingress for Grafana (using HAProxy Ingress class)
+          ingress:
+            enabled: true
+            ingressClassName: haproxy
+            hosts:
+              - grafana.k8s.atik.demo
+            paths:
+              - /
 
         # Prometheus configuration
         prometheus:
