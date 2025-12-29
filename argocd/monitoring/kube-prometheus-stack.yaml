@@ -29,9 +29,9 @@ spec:
           # Default dashboards
           defaultDashboardsEnabled: true
           defaultDashboardsTimezone: utc
-          # Gateway API HTTPRoute for Grafana
+          # Gateway API HTTPRoute for Grafana (v0.5.1 experimental API)
           extraObjects:
-            - apiVersion: gateway.networking.k8s.io/v1
+            - apiVersion: gateway.networking.k8s.io/v1alpha2
               kind: HTTPRoute
               metadata:
                 name: grafana-route
