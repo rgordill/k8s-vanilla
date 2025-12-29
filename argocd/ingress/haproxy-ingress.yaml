@@ -13,15 +13,16 @@ spec:
   source:
     repoURL: https://haproxytech.github.io/helm-charts
     chart: kubernetes-ingress
-    targetRevision: 1.42.0
+    targetRevision: 1.46.1
     helm:
       releaseName: haproxy-ingress
       valuesObject:
         # Controller configuration
         controller:
-          # Enable Gateway API support via extraArgs (gatewayControllerName helm value not working)
-          extraArgs:
-            - --gateway-controller-name=haproxy.org/gateway-controller
+          # Enable Gateway API support
+          kubernetesGateway:
+            enabled: true
+            gatewayControllerName: haproxy.org/gateway-controller
 
           # Single node deployment
           replicaCount: 1
