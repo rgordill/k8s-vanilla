@@ -19,8 +19,9 @@ spec:
       valuesObject:
         # Controller configuration
         controller:
-          # Enable Gateway API support
-          gatewayControllerName: haproxy.org/gateway-controller
+          # Enable Gateway API support via extraArgs (gatewayControllerName helm value not working)
+          extraArgs:
+            - --gateway-controller-name=haproxy.org/gateway-controller
 
           # Single node deployment
           replicaCount: 1

@@ -40,6 +40,7 @@ spec:
                 parentRefs:
                   - name: haproxy-gateway
                     namespace: haproxy-controller
+                    sectionName: http
                 hostnames:
                   - grafana.k8s.atik.demo
                 rules:
