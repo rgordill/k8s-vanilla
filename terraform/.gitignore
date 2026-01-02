@@ -18,6 +18,8 @@ override.tf.json
 # Sensitive variable files
 *.auto.tfvars
 *.auto.tfvars.json
+terraform.tfvars
+!terraform.tfvars.example
 
 # CLI configuration files
 .terraformrc

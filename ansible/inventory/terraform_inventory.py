@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """
 Dynamic Ansible inventory script that reads from Terraform state.
+Supports multiple providers (libvirt, aws).
+
+Usage:
+  Set TERRAFORM_PROVIDER environment variable to 'libvirt' or 'aws'
+  Default: auto-detect based on which has a terraform.tfstate file
 """
 
 import json
@@ -8,10 +13,30 @@ import subprocess
 import sys
 import os
 
+def get_terraform_dir():
+    """Get the appropriate Terraform directory based on provider."""
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    terraform_base = os.path.join(os.path.dirname(os.path.dirname(script_dir)), 'terraform')
+    
+    # Check for TERRAFORM_PROVIDER environment variable
+    provider = os.environ.get('TERRAFORM_PROVIDER', '').lower()
+    
+    if provider in ['libvirt', 'aws']:
+        return os.path.join(terraform_base, provider)
+    
+    # Auto-detect: check which provider has a state file
+    for p in ['libvirt', 'aws']:
+        provider_dir = os.path.join(terraform_base, p)
+        state_file = os.path.join(provider_dir, 'terraform.tfstate')
+        if os.path.exists(state_file):
+            return provider_dir
+    
+    # Default to libvirt
+    return os.path.join(terraform_base, 'libvirt')
+
 def get_terraform_output():
     """Get outputs from Terraform state."""
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    terraform_dir = os.path.join(os.path.dirname(os.path.dirname(script_dir)), 'terraform')
+    terraform_dir = get_terraform_dir()
     
     try:
         result = subprocess.run(
@@ -23,7 +48,7 @@ def get_terraform_output():
         )
         return json.loads(result.stdout)
     except subprocess.CalledProcessError as e:
-        sys.stderr.write(f"Error running terraform output: {e.stderr}\n")
+        sys.stderr.write(f"Error running terraform output in {terraform_dir}: {e.stderr}\n")
         return {}
     except json.JSONDecodeError as e:
         sys.stderr.write(f"Error parsing terraform output: {e}\n")
@@ -70,10 +95,9 @@ def main():
         print(json.dumps({}))
     else:
         sys.stderr.write("Usage: terraform_inventory.py --list | --host <hostname>\n")
+        sys.stderr.write("\nEnvironment variables:\n")
+        sys.stderr.write("  TERRAFORM_PROVIDER: 'libvirt' or 'aws' (auto-detected if not set)\n")
         sys.exit(1)
 
 if __name__ == '__main__':
     main()
-
-
-

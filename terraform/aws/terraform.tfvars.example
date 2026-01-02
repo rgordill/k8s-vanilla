@@ -1,0 +1,34 @@
+# =============================================================================
+# AWS Kubernetes Node Configuration
+# =============================================================================
+# Copy this file to terraform.tfvars and customize as needed
+
+# AWS configuration
+aws_region = "eu-west-1"
+environment = "dev"
+
+# Network configuration
+vpc_cidr          = "10.0.0.0/16"
+subnet_cidr       = "10.0.1.0/24"
+availability_zone = "eu-west-1a"
+
+# EC2 Instance settings
+hostname         = "k8s-node"
+instance_type    = "t3.large"  # 2 vCPU, 8GB RAM (minimum for Kubernetes)
+root_volume_size = 30          # GB
+root_volume_type = "gp3"
+
+# AMI Configuration (leave ami_id empty to auto-select latest Fedora)
+ami_id          = ""
+ami_owner       = "125523088429"  # Fedora Project
+ami_name_pattern = "Fedora-Cloud-Base-*.x86_64-hvm-*-gp3-*"
+
+# Authentication
+ssh_public_key_file = "~/.ssh/id_rsa.pub"
+ssh_user            = "fedora"
+key_pair_name       = "k8s-vanilla-key"
+
+# Kubernetes Network (used by Ansible)
+pod_network_cidr = "10.244.0.0/16"
+service_cidr     = "10.96.0.0/12"
+

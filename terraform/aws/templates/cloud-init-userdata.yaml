@@ -1,0 +1,15 @@
+#cloud-config
+# Cloud-init configuration - Basic VM setup (Kubernetes configured by Ansible)
+
+hostname: ${hostname}
+fqdn: ${hostname}
+manage_etc_hosts: true
+
+# Basic packages needed for Ansible
+packages:
+  - python3
+  - python3-dnf
+
+# Final message
+final_message: "Cloud-init completed. Instance ready for Ansible configuration."
+
