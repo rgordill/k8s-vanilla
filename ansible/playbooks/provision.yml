@@ -1,5 +1,6 @@
 ---
 # Playbook to provision infrastructure with Terraform
+# Set terraform_provider variable to 'libvirt' or 'aws'
 
 - name: Provision infrastructure with Terraform
   hosts: localhost
@@ -7,10 +8,32 @@
   gather_facts: false
 
   vars:
-    terraform_dir: "{{ playbook_dir }}/../../terraform"
+    terraform_provider: "{{ lookup('env', 'TERRAFORM_PROVIDER') | default('libvirt', true) }}"
+    terraform_dir: "{{ playbook_dir }}/../../terraform/{{ terraform_provider }}"
     terraform_state_file: "{{ terraform_dir }}/terraform.tfstate"
 
   tasks:
+    - name: Display selected provider
+      ansible.builtin.debug:
+        msg: "Provisioning with Terraform provider: {{ terraform_provider }}"
+
+    - name: Validate provider selection
+      ansible.builtin.assert:
+        that:
+          - terraform_provider in ['libvirt', 'aws']
+        fail_msg: "Invalid terraform_provider '{{ terraform_provider }}'. Must be 'libvirt' or 'aws'."
+        success_msg: "Using provider: {{ terraform_provider }}"
+
+    - name: Check if Terraform directory exists
+      ansible.builtin.stat:
+        path: "{{ terraform_dir }}"
+      register: terraform_dir_check
+
+    - name: Fail if Terraform directory does not exist
+      ansible.builtin.fail:
+        msg: "Terraform directory '{{ terraform_dir }}' does not exist"
+      when: not terraform_dir_check.stat.exists
+
     - name: Check if Terraform is initialized
       ansible.builtin.stat:
         path: "{{ terraform_dir }}/.terraform"
@@ -50,9 +73,14 @@
     - name: Display VM information
       ansible.builtin.debug:
         msg:
+          - "Provider: {{ terraform_provider }}"
           - "VM Name: {{ tf_outputs.vm_name.value }}"
           - "VM IP: {{ tf_outputs.vm_ip.value }}"
           - "SSH User: {{ tf_outputs.ssh_user.value }}"
+
+    - name: Set TERRAFORM_PROVIDER environment hint
+      ansible.builtin.debug:
+        msg: "Run 'export TERRAFORM_PROVIDER={{ terraform_provider }}' before running other playbooks"
 
     - name: Wait for SSH to become available
       ansible.builtin.wait_for:
@@ -62,6 +90,3 @@
         timeout: 300
         state: started
       when: terraform_apply.changed
-
-
-

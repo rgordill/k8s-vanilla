@@ -1,0 +1,31 @@
+---
+# =============================================================================
+# Global Variables for k8s-vanilla
+# =============================================================================
+
+# Infrastructure Provider
+# Options: 'libvirt' (local VMs) or 'aws' (cloud)
+# Can be overridden via:
+#   - Environment variable: TERRAFORM_PROVIDER
+#   - Extra vars: -e terraform_provider=aws
+terraform_provider: libvirt
+
+# =============================================================================
+# Kubernetes Configuration
+# =============================================================================
+
+# Pod network CIDR (used by Flannel CNI)
+pod_network_cidr: "10.244.0.0/16"
+
+# Service network CIDR
+service_cidr: "10.96.0.0/12"
+
+# CoreDNS replicas
+coredns_replicas: 1
+
+# =============================================================================
+# kubeadm API versions
+# =============================================================================
+kubeadm_api_version: "kubeadm.k8s.io/v1beta4"
+kubelet_config_version: "kubelet.config.k8s.io/v1beta1"
+

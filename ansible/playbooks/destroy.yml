@@ -1,5 +1,6 @@
 ---
 # Playbook to destroy infrastructure with Terraform
+# Set terraform_provider variable to 'libvirt' or 'aws'
 
 - name: Destroy infrastructure with Terraform
   hosts: localhost
@@ -7,20 +8,40 @@
   gather_facts: false
 
   vars:
-    terraform_dir: "{{ playbook_dir }}/../../terraform"
+    terraform_provider: "{{ lookup('env', 'TERRAFORM_PROVIDER') | default('libvirt', true) }}"
+    terraform_dir: "{{ playbook_dir }}/../../terraform/{{ terraform_provider }}"
 
   tasks:
+    - name: Display selected provider
+      ansible.builtin.debug:
+        msg: "Destroying infrastructure for provider: {{ terraform_provider }}"
+
+    - name: Validate provider selection
+      ansible.builtin.assert:
+        that:
+          - terraform_provider in ['libvirt', 'aws']
+        fail_msg: "Invalid terraform_provider '{{ terraform_provider }}'. Must be 'libvirt' or 'aws'."
+        success_msg: "Destroying provider: {{ terraform_provider }}"
+
+    - name: Check if Terraform state exists
+      ansible.builtin.stat:
+        path: "{{ terraform_dir }}/terraform.tfstate"
+      register: terraform_state_check
+
+    - name: Warn if no state file exists
+      ansible.builtin.debug:
+        msg: "No Terraform state file found for {{ terraform_provider }}. Nothing to destroy."
+      when: not terraform_state_check.stat.exists
+
     - name: Destroy Terraform infrastructure
       ansible.builtin.command:
         cmd: terraform destroy -auto-approve
         chdir: "{{ terraform_dir }}"
       register: terraform_destroy
       changed_when: "'Destroy complete!' in terraform_destroy.stdout"
+      when: terraform_state_check.stat.exists
 
     - name: Display destruction result
       ansible.builtin.debug:
-        msg: "Infrastructure destroyed successfully"
-      when: terraform_destroy.changed
-
-
-
+        msg: "Infrastructure for {{ terraform_provider }} destroyed successfully"
+      when: terraform_destroy.changed | default(false)
