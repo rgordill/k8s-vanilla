@@ -21,6 +21,30 @@
     regexp: '.*swap.*'
     state: absent
 
+- name: Disable zram-generator (Fedora swap)
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    state: stopped
+    enabled: false
+    masked: true
+  loop:
+    - swap-create@zram0.service
+    - systemd-zram-setup@zram0.service
+  ignore_errors: true
+
+- name: Remove zram configuration
+  ansible.builtin.file:
+    path: /etc/systemd/zram-generator.conf
+    state: absent
+  ignore_errors: true
+
+- name: Disable zram module loading
+  ansible.builtin.copy:
+    dest: /etc/modprobe.d/zram.conf
+    content: |
+      blacklist zram
+    mode: '0644'
+
 - name: Load required kernel modules
   community.general.modprobe:
     name: "{{ item }}"
