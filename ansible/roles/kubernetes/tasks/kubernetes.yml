@@ -18,9 +18,10 @@
       - kubectl
     state: present
 
-- name: Enable kubelet service
+- name: Enable and start kubelet service
   ansible.builtin.systemd:
     name: kubelet
+    state: started
     enabled: true
     daemon_reload: true
 
