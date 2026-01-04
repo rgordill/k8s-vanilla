@@ -18,6 +18,22 @@
       - kubectl
     state: present
 
+- name: Create kubelet systemd drop-in directory
+  ansible.builtin.file:
+    path: /etc/systemd/system/kubelet.service.d
+    state: directory
+    mode: '0755'
+
+- name: Configure kubelet to wait for CRI-O
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/kubelet.service.d/10-crio-dependency.conf
+    mode: '0644'
+    content: |
+      [Unit]
+      After=crio.service
+      Requires=crio.service
+  notify: Reload systemd
+
 - name: Enable and start kubelet service
   ansible.builtin.systemd:
     name: kubelet
