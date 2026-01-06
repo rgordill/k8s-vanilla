@@ -34,6 +34,8 @@ spec:
               multicluster:
                 global:
                   enabled: false
+                etcd:
+                  enabled: false
           # Ingress for Grafana (using HAProxy Ingress class)
           ingress:
             enabled: true
@@ -97,8 +99,9 @@ spec:
         # Prometheus Node Exporter configuration
         prometheus-node-exporter:
           enabled: true
-        # Node Exporter operating systems
+        # Node Exporter operating systems dashboards
         nodeExporter:
+          forceDeployDashboards: false
           operatingSystems:
             darwin:
               enabled: false
