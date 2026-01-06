@@ -28,7 +28,12 @@ spec:
             type: ClusterIP
           # Default dashboards
           defaultDashboardsEnabled: true
-          defaultDashboardsTimezone: utc
+          defaultDashboardsTimezone: default
+          sidecar:
+            dashboards:
+              multicluster:
+                global:
+                  enabled: false
           # Ingress for Grafana (using HAProxy Ingress class)
           ingress:
             enabled: true
@@ -92,6 +97,13 @@ spec:
         # Prometheus Node Exporter configuration
         prometheus-node-exporter:
           enabled: true
+        # Node Exporter operating systems
+        nodeExporter:
+          operatingSystems:
+            darwin:
+              enabled: false
+            aix:
+              enabled: false
 
         # Prometheus Operator configuration
         prometheusOperator:
