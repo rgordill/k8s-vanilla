@@ -23,6 +23,10 @@ flannel_manifest_url: "https://github.com/flannel-io/flannel/releases/latest/dow
 kubeadm_api_version: "kubeadm.k8s.io/v1beta4"
 kubelet_config_version: "kubelet.config.k8s.io/v1beta1"
 
+# API server endpoint (use public IP for external access)
+# ansible_host is the public IP from Terraform inventory
+api_server_endpoint: "{{ ansible_host }}"
+
 # SELinux mode (permissive or disabled)
 selinux_mode: "permissive"
 

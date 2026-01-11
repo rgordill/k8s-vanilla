@@ -4,8 +4,11 @@ Dynamic Ansible inventory script that reads from Terraform state.
 Supports multiple providers (libvirt, aws).
 
 Usage:
-  Set TERRAFORM_PROVIDER environment variable to 'libvirt' or 'aws'
-  Default: auto-detect based on which has a terraform.tfstate file
+  Provider is determined in this order:
+  1. group_vars/all.yml (terraform_provider variable)
+  2. TERRAFORM_PROVIDER environment variable
+  3. Auto-detect based on which has a terraform.tfstate file
+  4. Default: libvirt
 """
 
 import json
@@ -13,25 +16,60 @@ import subprocess
 import sys
 import os
 
+try:
+    import yaml
+    HAS_YAML = True
+except ImportError:
+    HAS_YAML = False
+
+
+def get_provider_from_group_vars():
+    """Read terraform_provider from group_vars/all.yml."""
+    if not HAS_YAML:
+        return None
+    
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    group_vars_file = os.path.join(script_dir, 'group_vars', 'all.yml')
+    
+    if not os.path.exists(group_vars_file):
+        return None
+    
+    try:
+        with open(group_vars_file, 'r') as f:
+            data = yaml.safe_load(f)
+            if data and isinstance(data, dict):
+                provider = data.get('terraform_provider', '').lower()
+                if provider in ['libvirt', 'aws']:
+                    return provider
+    except Exception:
+        pass
+    
+    return None
+
+
 def get_terraform_dir():
     """Get the appropriate Terraform directory based on provider."""
     script_dir = os.path.dirname(os.path.abspath(__file__))
     terraform_base = os.path.join(os.path.dirname(os.path.dirname(script_dir)), 'terraform')
     
-    # Check for TERRAFORM_PROVIDER environment variable
-    provider = os.environ.get('TERRAFORM_PROVIDER', '').lower()
+    # 1. Check group_vars/all.yml first
+    provider = get_provider_from_group_vars()
+    if provider:
+        return os.path.join(terraform_base, provider)
     
+    # 2. Check for TERRAFORM_PROVIDER environment variable
+    provider = os.environ.get('TERRAFORM_PROVIDER', '').lower()
     if provider in ['libvirt', 'aws']:
         return os.path.join(terraform_base, provider)
     
-    # Auto-detect: check which provider has a state file
+    # 3. Auto-detect: check which provider has a state file
     for p in ['libvirt', 'aws']:
         provider_dir = os.path.join(terraform_base, p)
         state_file = os.path.join(provider_dir, 'terraform.tfstate')
         if os.path.exists(state_file):
             return provider_dir
     
-    # Default to libvirt
+    # 4. Default to libvirt
     return os.path.join(terraform_base, 'libvirt')
 
 def get_terraform_output():
@@ -95,8 +133,11 @@ def main():
         print(json.dumps({}))
     else:
         sys.stderr.write("Usage: terraform_inventory.py --list | --host <hostname>\n")
-        sys.stderr.write("\nEnvironment variables:\n")
-        sys.stderr.write("  TERRAFORM_PROVIDER: 'libvirt' or 'aws' (auto-detected if not set)\n")
+        sys.stderr.write("\nProvider selection (in order of precedence):\n")
+        sys.stderr.write("  1. group_vars/all.yml: terraform_provider variable\n")
+        sys.stderr.write("  2. TERRAFORM_PROVIDER environment variable\n")
+        sys.stderr.write("  3. Auto-detect based on terraform.tfstate presence\n")
+        sys.stderr.write("  4. Default: libvirt\n")
         sys.exit(1)
 
 if __name__ == '__main__':

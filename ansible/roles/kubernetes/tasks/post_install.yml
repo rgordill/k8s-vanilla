@@ -14,6 +14,17 @@
     kubernetes_node_ready.resources | map(attribute='status.conditions') | flatten |
     selectattr('type', 'equalto', 'Ready') | selectattr('status', 'equalto', 'True') | list | length > 0
 
+- name: Scale CoreDNS to desired replicas
+  kubernetes.core.k8s_scale:
+    api_version: apps/v1
+    kind: Deployment
+    name: coredns
+    namespace: kube-system
+    replicas: "{{ coredns_replicas }}"
+    kubeconfig: /root/.kube/config
+    wait: true
+    wait_timeout: "{{ coredns_ready_timeout }}"
+
 - name: Wait for CoreDNS to be ready
   kubernetes.core.k8s_info:
     api_version: apps/v1
@@ -27,7 +38,7 @@
   until: >
     coredns_deployment.resources | length > 0 and
     coredns_deployment.resources[0].status.readyReplicas is defined and
-    coredns_deployment.resources[0].status.readyReplicas == coredns_deployment.resources[0].spec.replicas
+    coredns_deployment.resources[0].status.readyReplicas == coredns_replicas
 
 - name: Get node status
   kubernetes.core.k8s_info:

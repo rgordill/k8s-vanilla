@@ -1,0 +1,168 @@
+---
+# Main tasks for ArgoCD Core deployment with Helm
+
+- name: Check if Helm is installed
+  ansible.builtin.command: helm version --short
+  register: helm_check
+  ignore_errors: true
+  changed_when: false
+
+- name: Download Helm installation script
+  ansible.builtin.get_url:
+    url: https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+    dest: /tmp/get_helm.sh
+    mode: '0700'
+  when: helm_check.rc != 0
+
+- name: Install Helm
+  ansible.builtin.command: /tmp/get_helm.sh
+  when: helm_check.rc != 0
+  changed_when: true
+
+- name: Remove Helm installation script
+  ansible.builtin.file:
+    path: /tmp/get_helm.sh
+    state: absent
+  when: helm_check.rc != 0
+
+- name: Create ArgoCD namespace
+  kubernetes.core.k8s:
+    kubeconfig: "{{ argocd_kubeconfig }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ argocd_namespace }}"
+
+- name: Add ArgoCD Helm repository
+  kubernetes.core.helm_repository:
+    name: "{{ argocd_helm_repo_name }}"
+    repo_url: "{{ argocd_helm_repo_url }}"
+
+- name: Deploy ArgoCD Core with Helm
+  kubernetes.core.helm:
+    name: "{{ argocd_release_name }}"
+    chart_ref: "{{ argocd_helm_repo_name }}/argo-cd"
+    chart_version: "{{ argocd_chart_version }}"
+    release_namespace: "{{ argocd_namespace }}"
+    create_namespace: true
+    kubeconfig: "{{ argocd_kubeconfig }}"
+    values: "{{ argocd_helm_values }}"
+    wait: true
+    wait_timeout: "{{ argocd_ready_timeout }}s"
+  vars:
+    argocd_helm_values:
+      crds:
+        install: true
+      global:
+        domain: ""
+      configs:
+        secret:
+          # Let Helm manage the argocd-secret including server.secretkey
+          createSecret: true
+        cm:
+          application.resourceTrackingMethod: annotation
+      # ArgoCD Core configuration - disable non-essential components
+      server:
+        replicas: "{{ 0 if argocd_core_install else 1 }}"
+      controller:
+        replicas: 1
+      repoServer:
+        replicas: 1
+      redis:
+        enabled: true
+      dex:
+        enabled: "{{ not argocd_core_install }}"
+      notifications:
+        enabled: false
+      applicationSet:
+        enabled: false
+        replicas: 0
+
+- name: Wait for ArgoCD Application Controller to be ready
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: StatefulSet
+    name: "argocd-application-controller"
+    namespace: "{{ argocd_namespace }}"
+    kubeconfig: "{{ argocd_kubeconfig }}"
+  register: argocd_controller
+  retries: "{{ (argocd_ready_timeout / 10) | int }}"
+  delay: 10
+  until: >
+    argocd_controller.resources | length > 0 and
+    argocd_controller.resources[0].status.readyReplicas is defined and
+    argocd_controller.resources[0].status.readyReplicas == argocd_controller.resources[0].spec.replicas
+
+- name: Wait for ArgoCD Repo Server to be ready
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    name: "argocd-repo-server"
+    namespace: "{{ argocd_namespace }}"
+    kubeconfig: "{{ argocd_kubeconfig }}"
+  register: argocd_repo_server
+  retries: "{{ (argocd_ready_timeout / 10) | int }}"
+  delay: 10
+  until: >
+    argocd_repo_server.resources | length > 0 and
+    argocd_repo_server.resources[0].status.readyReplicas is defined and
+    argocd_repo_server.resources[0].status.readyReplicas == argocd_repo_server.resources[0].spec.replicas
+
+- name: Create default AppProject
+  kubernetes.core.k8s:
+    kubeconfig: "{{ argocd_kubeconfig }}"
+    state: present
+    definition:
+      apiVersion: argoproj.io/v1alpha1
+      kind: AppProject
+      metadata:
+        name: default
+        namespace: "{{ argocd_namespace }}"
+      spec:
+        description: Default project
+        sourceRepos:
+          - '*'
+        destinations:
+          - namespace: '*'
+            server: '*'
+        clusterResourceWhitelist:
+          - group: '*'
+            kind: '*'
+        namespaceResourceWhitelist:
+          - group: '*'
+            kind: '*'
+
+- name: Get ArgoCD pods status
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Pod
+    namespace: "{{ argocd_namespace }}"
+    kubeconfig: "{{ argocd_kubeconfig }}"
+  register: argocd_pods
+
+- name: Display ArgoCD installation status
+  ansible.builtin.debug:
+    msg:
+      - "ArgoCD Core has been deployed successfully!"
+      - "Namespace: {{ argocd_namespace }}"
+      - "Release: {{ argocd_release_name }}"
+      - "Pods: {{ argocd_pods.resources | map(attribute='metadata.name') | list }}"
+
+- name: Copy ArgoCD App of Apps manifest to remote host
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../argocd/apps.yaml"
+    dest: /tmp/argocd-apps.yaml
+    mode: '0644'
+
+- name: Deploy ArgoCD App of Apps
+  kubernetes.core.k8s:
+    kubeconfig: "{{ argocd_kubeconfig }}"
+    state: present
+    src: /tmp/argocd-apps.yaml
+
+- name: Clean up temporary manifest
+  ansible.builtin.file:
+    path: /tmp/argocd-apps.yaml
+    state: absent

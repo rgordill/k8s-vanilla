@@ -1,0 +1,26 @@
+---
+# ArgoCD configuration
+
+# ArgoCD version/chart version
+argocd_chart_version: "7.7.16"
+
+# ArgoCD namespace
+argocd_namespace: "argocd"
+
+# Helm release name
+argocd_release_name: "argocd"
+
+# Helm repository
+argocd_helm_repo_name: "argo"
+argocd_helm_repo_url: "https://argoproj.github.io/argo-helm"
+
+# ArgoCD Core installation (minimal - no UI, no API server, no Dex)
+# Set to false for full ArgoCD installation
+argocd_core_install: true
+
+# Wait timeout for ArgoCD deployment (in seconds)
+argocd_ready_timeout: 300
+
+# Kubeconfig path
+argocd_kubeconfig: "/root/.kube/config"
+

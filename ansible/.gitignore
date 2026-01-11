@@ -8,6 +8,7 @@ __pycache__/
 # Ansible Galaxy roles
 roles/*/
 !roles/kubernetes/
+!roles/argocd/
 
 # Ansible collections
 collections/

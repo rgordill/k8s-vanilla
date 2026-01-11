@@ -8,9 +8,14 @@
   gather_facts: false
 
   vars:
-    terraform_provider: "{{ lookup('env', 'TERRAFORM_PROVIDER') | default('libvirt', true) }}"
     terraform_dir: "{{ playbook_dir }}/../../terraform/{{ terraform_provider }}"
     terraform_state_file: "{{ terraform_dir }}/terraform.tfstate"
+
+  pre_tasks:
+    - name: Override terraform_provider from environment if set
+      ansible.builtin.set_fact:
+        terraform_provider: "{{ lookup('env', 'TERRAFORM_PROVIDER') }}"
+      when: lookup('env', 'TERRAFORM_PROVIDER') | length > 0
 
   tasks:
     - name: Display selected provider

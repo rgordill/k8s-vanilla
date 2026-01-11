@@ -1,9 +1,11 @@
 ---
 # Prerequisites for Kubernetes installation
 
-- name: Install pip
+- name: Install pip and required Python dependencies
   ansible.builtin.dnf:
-    name: python3-pip
+    name:
+      - python3-pip
+      - python3-packaging
     state: present
 
 - name: Install Python kubernetes library

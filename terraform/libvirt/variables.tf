@@ -15,7 +15,13 @@ variable "libvirt_uri" {
 variable "network_name" {
   description = "The name of the network"
   type        = string
-  default     = "k8s-network"
+  default     = "local-nat"
+}
+
+variable "use_existing_network" {
+  description = "Whether to use an existing network instead of creating one"
+  type        = bool
+  default     = false
 }
 
 variable "network_mode" {
@@ -27,7 +33,7 @@ variable "network_mode" {
 variable "network_cidr" {
   description = "The CIDR block for the network"
   type        = string
-  default     = "192.168.200.0/24"
+  default     = "192.168.160.0/24"
 }
 
 variable "domain" {
@@ -49,7 +55,7 @@ variable "hostname" {
 variable "ip" {
   description = "The IP address for the VM"
   type        = string
-  default     = "192.168.200.10"
+  default     = "192.168.160.10"
 }
 
 variable "mac_address" {

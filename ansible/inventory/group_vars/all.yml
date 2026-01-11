@@ -8,7 +8,8 @@
 # Can be overridden via:
 #   - Environment variable: TERRAFORM_PROVIDER
 #   - Extra vars: -e terraform_provider=aws
-terraform_provider: libvirt
+#terraform_provider: libvirt
+terraform_provider: aws
 
 # =============================================================================
 # Kubernetes Configuration

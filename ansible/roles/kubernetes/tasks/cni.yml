@@ -8,5 +8,41 @@
     kubeconfig: /root/.kube/config
   when: cni_plugin == "flannel"
 
+- name: Wait for Flannel DaemonSet to be ready
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: DaemonSet
+    name: kube-flannel-ds
+    namespace: kube-flannel
+    kubeconfig: /root/.kube/config
+  register: flannel_ds
+  retries: 30
+  delay: 10
+  until: >
+    flannel_ds.resources | length > 0 and
+    flannel_ds.resources[0].status.numberReady is defined and
+    flannel_ds.resources[0].status.numberReady == flannel_ds.resources[0].status.desiredNumberScheduled
+  when: cni_plugin == "flannel"
+
+- name: Wait for CNI configuration to be available
+  ansible.builtin.wait_for:
+    path: /etc/cni/net.d/10-flannel.conflist
+    state: present
+    timeout: 120
+  when: cni_plugin == "flannel"
+
+- name: Restart CRI-O to pick up new CNI configuration
+  ansible.builtin.systemd:
+    name: crio
+    state: restarted
+  when: cni_plugin == "flannel"
+
+- name: Wait for CRI-O to be ready after restart
+  ansible.builtin.wait_for:
+    path: /var/run/crio/crio.sock
+    state: present
+    timeout: 60
+  when: cni_plugin == "flannel"
+
 
 

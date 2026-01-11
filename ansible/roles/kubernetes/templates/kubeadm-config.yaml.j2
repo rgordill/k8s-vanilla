@@ -12,6 +12,14 @@ nodeRegistration:
 apiVersion: {{ kubeadm_api_version }}
 kind: ClusterConfiguration
 kubernetesVersion: stable
+controlPlaneEndpoint: "{{ api_server_endpoint }}:6443"
+apiServer:
+  certSANs:
+    - "{{ ansible_host }}"
+    - "{{ ansible_default_ipv4.address }}"
+    - "{{ ansible_hostname }}"
+    - "localhost"
+    - "127.0.0.1"
 networking:
   podSubnet: "{{ pod_network_cidr }}"
   serviceSubnet: "{{ service_cidr }}"
@@ -21,20 +29,16 @@ dns:
 etcd:
   local:
     extraArgs:
-      listen-metrics-urls: "http://0.0.0.0:2381"
+      - name: listen-metrics-urls
+        value: "http://0.0.0.0:2381"
 controllerManager:
   extraArgs:
-    bind-address: "0.0.0.0"
+    - name: bind-address
+      value: "0.0.0.0"
 scheduler:
   extraArgs:
-    bind-address: "0.0.0.0"
----
-apiVersion: coredns.kubeadm.io/v1
-kind: CoreDNSConfiguration
-metadata:
-  name: coredns
-spec:
-  replicas: {{ coredns_replicas }}
+    - name: bind-address
+      value: "0.0.0.0"
 ---
 apiVersion: {{ kubelet_config_version }}
 kind: KubeletConfiguration

@@ -4,13 +4,13 @@
 # Copy this file to terraform.tfvars and customize as needed
 
 # AWS configuration
-aws_region = "eu-west-1"
+aws_region = "us-east-2"
 environment = "dev"
 
 # Network configuration
 vpc_cidr          = "10.0.0.0/16"
 subnet_cidr       = "10.0.1.0/24"
-availability_zone = "eu-west-1a"
+availability_zone = "us-east-2a"
 
 # EC2 Instance settings
 hostname         = "k8s-node"
@@ -21,7 +21,7 @@ root_volume_type = "gp3"
 # AMI Configuration (leave ami_id empty to auto-select latest Fedora)
 ami_id          = ""
 ami_owner       = "125523088429"  # Fedora Project
-ami_name_pattern = "Fedora-Cloud-Base-*.x86_64-hvm-*-gp3-*"
+ami_name_pattern = "Fedora-Cloud-Base-*x86_64*"
 
 # Authentication
 ssh_public_key_file = "~/.ssh/id_rsa.pub"

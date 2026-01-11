@@ -6,6 +6,43 @@
     path: /etc/kubernetes/admin.conf
   register: kubeadm_init_check
 
+- name: Clean up leftover CNI configuration before init
+  when: not kubeadm_init_check.stat.exists
+  block:
+    - name: Delete cni0 interface if exists
+      ansible.builtin.command: ip link delete cni0
+      failed_when: false
+      changed_when: false
+
+    - name: Delete flannel.1 interface if exists
+      ansible.builtin.command: ip link delete flannel.1
+      failed_when: false
+      changed_when: false
+
+    - name: Remove CNI network configuration
+      ansible.builtin.file:
+        path: /etc/cni/net.d
+        state: absent
+
+    - name: Recreate CNI network configuration directory
+      ansible.builtin.file:
+        path: /etc/cni/net.d
+        state: directory
+        mode: '0755'
+
+    - name: Remove CNI state directory
+      ansible.builtin.file:
+        path: /var/lib/cni
+        state: absent
+
+    - name: Flush iptables rules
+      ansible.builtin.shell: |
+        iptables -F
+        iptables -t nat -F
+        iptables -t mangle -F
+        iptables -X
+      changed_when: false
+
 - name: Pull Kubernetes images
   ansible.builtin.command: kubeadm config images pull
   when: not kubeadm_init_check.stat.exists
@@ -95,6 +132,16 @@
       metadata:
         labels:
           node-role.kubernetes.io/control-plane: ""
+
+- name: Fetch kubeconfig to local machine
+  ansible.builtin.fetch:
+    src: /etc/kubernetes/admin.conf
+    dest: "{{ playbook_dir }}/../../kubernetes/kubeconfig"
+    flat: true
+
+- name: Display kubeconfig location
+  ansible.builtin.debug:
+    msg: "Kubeconfig saved to {{ playbook_dir }}/../../kubernetes/kubeconfig - use 'export KUBECONFIG={{ playbook_dir }}/../../kubernetes/kubeconfig' to access the cluster"
 
 
 

@@ -5,7 +5,7 @@
 variable "aws_region" {
   description = "AWS region to deploy resources"
   type        = string
-  default     = "eu-west-1"
+  default     = "us-east-2"
 }
 
 variable "environment" {
@@ -33,7 +33,7 @@ variable "subnet_cidr" {
 variable "availability_zone" {
   description = "Availability zone for the subnet"
   type        = string
-  default     = "eu-west-1a"
+  default     = "us-east-2a"
 }
 
 # =============================================================================
@@ -83,7 +83,7 @@ variable "ami_owner" {
 variable "ami_name_pattern" {
   description = "Name pattern for AMI lookup"
   type        = string
-  default     = "Fedora-Cloud-Base-*.x86_64-hvm-*-gp3-*"
+  default     = "Fedora-Cloud-Base-*x86_64*"
 }
 
 # =============================================================================

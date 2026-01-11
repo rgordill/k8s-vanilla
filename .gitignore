@@ -1,1 +1,4 @@
 .ansible
+
+# Kubeconfig and cluster artifacts
+kubernetes/

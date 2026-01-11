@@ -6,14 +6,15 @@
 libvirt_uri = "qemu:///system"
 
 # Network configuration
-network_name = "k8s-network"
-network_mode = "nat"
-network_cidr = "192.168.200.0/24"
-domain       = "k8s.local"
+network_name         = "local-nat"
+network_mode         = "nat"
+network_cidr         = "192.168.160.0/24"
+domain               = "k8s.local"
+use_existing_network = false  # Set to true to use existing network instead of creating
 
 # Virtual Machine settings
 hostname       = "k8s-node"
-ip             = "192.168.200.10"
+ip             = "192.168.160.10"
 mac_address    = ""  # Leave empty for auto-generated MAC
 memory         = 8192  # 8GB RAM
 vcpus          = 4
