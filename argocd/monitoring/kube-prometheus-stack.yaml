@@ -220,4 +220,17 @@ spec:
       kind: ThanosRuler
       jqPathExpressions:
         - '.status'
+    # Ignore status fields causing schema issues with server-side apply
+    - group: apps
+      kind: ReplicaSet
+      jqPathExpressions:
+        - '.status'
+    - group: apps
+      kind: Deployment
+      jqPathExpressions:
+        - '.status'
+    - group: apps
+      kind: StatefulSet
+      jqPathExpressions:
+        - '.status'
 
