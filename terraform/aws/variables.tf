@@ -81,9 +81,9 @@ variable "ami_owner" {
 }
 
 variable "ami_name_pattern" {
-  description = "Name pattern for AMI lookup"
+  description = "Name pattern for AMI lookup (use stable Fedora versions)"
   type        = string
-  default     = "Fedora-Cloud-Base-*x86_64*"
+  default     = "Fedora-Cloud-Base-AmazonEC2.x86_64-42-*"
 }
 
 # =============================================================================

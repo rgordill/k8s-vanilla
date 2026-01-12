@@ -19,11 +19,6 @@ spec:
       valuesObject:
         # Controller configuration
         controller:
-          # Enable Gateway API support
-          kubernetesGateway:
-            enabled: true
-            gatewayControllerName: haproxy.org/gateway-controller
-
           # Single node deployment
           replicaCount: 1
 
