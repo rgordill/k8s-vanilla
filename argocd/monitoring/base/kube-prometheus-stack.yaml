@@ -41,7 +41,7 @@ spec:
             enabled: true
             ingressClassName: haproxy
             hosts:
-              - grafana.k8s.atik.demo
+              - grafana.INGRESS_DOMAIN_PLACEHOLDER
             paths:
               - /
 

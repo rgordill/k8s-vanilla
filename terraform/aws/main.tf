@@ -239,3 +239,30 @@ resource "aws_eip" "k8s_node" {
   }
 }
 
+
+# -----------------------------------------------------------------------------
+# Route53 DNS Record
+# -----------------------------------------------------------------------------
+
+data "aws_route53_zone" "main" {
+  count = var.route53_zone_name != "" ? 1 : 0
+  name  = var.route53_zone_name
+}
+
+resource "aws_route53_record" "k8s_node" {
+  count   = var.route53_zone_name != "" ? 1 : 0
+  zone_id = data.aws_route53_zone.main[0].zone_id
+  name    = var.hostname
+  type    = "A"
+  ttl     = 300
+  records = [aws_eip.k8s_node.public_ip]
+}
+
+resource "aws_route53_record" "k8s_node_wildcard" {
+  count   = var.route53_zone_name != "" ? 1 : 0
+  zone_id = data.aws_route53_zone.main[0].zone_id
+  name    = "*.${var.hostname}"
+  type    = "A"
+  ttl     = 300
+  records = [aws_eip.k8s_node.public_ip]
+}

@@ -12,6 +12,51 @@
 terraform_provider: aws
 
 # =============================================================================
+# Ingress Domain Configuration
+# =============================================================================
+# Uncomment the appropriate domain for your provider
+#ingress_domain: "k8s.atik.demo"              # libvirt
+ingress_domain: "k8s.sandbox5396.opentlc.com"  # aws
+
+# =============================================================================
+# SSH Configuration
+# =============================================================================
+ssh_public_key_file: "~/.ssh/id_rsa.pub"
+ssh_user: "fedora"
+
+# =============================================================================
+# AWS-Specific Terraform Variables
+# =============================================================================
+# AWS configuration (only used when terraform_provider: aws)
+aws_region: "us-east-2"
+aws_availability_zone: "us-east-2a"
+aws_instance_type: "c8i.xlarge"  # 8 vCPU, 64GB RAM
+aws_root_volume_size: 100  # GB
+aws_root_volume_type: "gp3"
+aws_vpc_cidr: "10.0.0.0/16"
+aws_subnet_cidr: "10.0.1.0/24"
+aws_hostname: "k8s-node"
+# Route53 DNS Configuration (leave empty to skip DNS)
+aws_route53_zone_name: "sandbox5396.opentlc.com"
+
+# =============================================================================
+# Libvirt-Specific Terraform Variables
+# =============================================================================
+# Libvirt configuration (only used when terraform_provider: libvirt)
+libvirt_uri: "qemu:///system"
+libvirt_hostname: "k8s-node"
+libvirt_ip: "192.168.160.10"
+libvirt_memory: 8192  # MB
+libvirt_vcpus: 4
+libvirt_disk_size: 32212254720  # 30GB in bytes
+libvirt_network_name: "local-nat"
+libvirt_network_cidr: "192.168.160.0/24"
+libvirt_network_mode: "nat"
+libvirt_domain: "k8s.local"
+libvirt_use_existing_network: false
+libvirt_download_image: false
+
+# =============================================================================
 # Kubernetes Configuration
 # =============================================================================
 

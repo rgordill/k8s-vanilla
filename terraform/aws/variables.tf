@@ -124,3 +124,13 @@ variable "service_cidr" {
   default     = "10.96.0.0/12"
 }
 
+
+# =============================================================================
+# Route53 DNS Configuration
+# =============================================================================
+
+variable "route53_zone_name" {
+  description = "Route53 hosted zone name for DNS records (leave empty to skip DNS)"
+  type        = string
+  default     = ""
+}

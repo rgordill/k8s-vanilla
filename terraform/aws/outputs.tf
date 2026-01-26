@@ -70,3 +70,12 @@ output "ansible_inventory" {
   }
 }
 
+output "dns_fqdn" {
+  description = "Fully qualified domain name of the instance"
+  value       = var.route53_zone_name != "" ? "${var.hostname}.${var.route53_zone_name}" : null
+}
+
+output "dns_wildcard_fqdn" {
+  description = "Wildcard FQDN for the instance"
+  value       = var.route53_zone_name != "" ? "*.${var.hostname}.${var.route53_zone_name}" : null
+}

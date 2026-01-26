@@ -110,6 +110,53 @@
     argocd_repo_server.resources[0].status.readyReplicas is defined and
     argocd_repo_server.resources[0].status.readyReplicas == argocd_repo_server.resources[0].spec.replicas
 
+- name: Check if argocd-secret exists and has server.secretkey
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Secret
+    name: argocd-secret
+    namespace: "{{ argocd_namespace }}"
+    kubeconfig: "{{ argocd_kubeconfig }}"
+  register: argocd_secret_check
+  ignore_errors: true
+
+- name: Generate and set server.secretkey if missing
+  kubernetes.core.k8s:
+    kubeconfig: "{{ argocd_kubeconfig }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: argocd-secret
+        namespace: "{{ argocd_namespace }}"
+      type: Opaque
+      stringData:
+        server.secretkey: "{{ lookup('password', '/dev/null length=32 chars=ascii_letters,digits') }}"
+  when: >
+    argocd_secret_check.resources | length == 0 or
+    (argocd_secret_check.resources | length > 0 and
+     (argocd_secret_check.resources[0].data is not defined or
+      'server.secretkey' not in (argocd_secret_check.resources[0].data | default({}))))
+  register: secret_update
+
+- name: Restart ArgoCD Application Controller if secret was updated
+  kubernetes.core.k8s:
+    kubeconfig: "{{ argocd_kubeconfig }}"
+    state: present
+    definition:
+      apiVersion: apps/v1
+      kind: StatefulSet
+      metadata:
+        name: argocd-application-controller
+        namespace: "{{ argocd_namespace }}"
+      spec:
+        template:
+          metadata:
+            annotations:
+              secret-updated: "{{ ansible_date_time.epoch }}"
+  when: secret_update.changed | default(false)
+
 - name: Create default AppProject
   kubernetes.core.k8s:
     kubeconfig: "{{ argocd_kubeconfig }}"
@@ -150,9 +197,9 @@
       - "Release: {{ argocd_release_name }}"
       - "Pods: {{ argocd_pods.resources | map(attribute='metadata.name') | list }}"
 
-- name: Copy ArgoCD App of Apps manifest to remote host
-  ansible.builtin.copy:
-    src: "{{ playbook_dir }}/../../argocd/apps.yaml"
+- name: Template ArgoCD App of Apps manifest with provider-specific overlay
+  ansible.builtin.template:
+    src: apps.yaml.j2
     dest: /tmp/argocd-apps.yaml
     mode: '0644'
 
@@ -166,3 +213,9 @@
   ansible.builtin.file:
     path: /tmp/argocd-apps.yaml
     state: absent
+
+- name: Display cluster configuration
+  ansible.builtin.debug:
+    msg:
+      - "ArgoCD App of Apps deployed with overlay: {{ terraform_provider }}"
+      - "Grafana will be available at: https://grafana.{{ ingress_domain }}"

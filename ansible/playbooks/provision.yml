@@ -57,6 +57,85 @@
         chdir: "{{ terraform_dir }}"
       changed_when: false
 
+# ============================================================================
+# LIBVIRT-SPECIFIC VARIABLES
+# ============================================================================
+    - name: Create Terraform variables file (libvirt)
+      ansible.builtin.copy:
+        dest: "{{ terraform_dir }}/terraform.tfvars"
+        mode: '0600'
+        content: |
+          # Libvirt connection
+          libvirt_uri = "{{ libvirt_uri }}"
+          
+          # Network configuration
+          network_name         = "{{ libvirt_network_name }}"
+          network_mode         = "{{ libvirt_network_mode }}"
+          network_cidr         = "{{ libvirt_network_cidr }}"
+          domain               = "{{ libvirt_domain }}"
+          use_existing_network = {{ libvirt_use_existing_network | lower }}
+          
+          # Virtual Machine settings
+          hostname       = "{{ libvirt_hostname }}"
+          ip             = "{{ libvirt_ip }}"
+          mac_address    = ""
+          memory         = {{ libvirt_memory }}
+          vcpus          = {{ libvirt_vcpus }}
+          main_disk_size = {{ libvirt_disk_size }}
+          
+          # Image configuration
+          download_image = {{ libvirt_download_image | lower }}
+          image_base     = "Fedora-Cloud-Base-Generic-42-1.1.x86_64.qcow2"
+          image_source   = "https://download.fedoraproject.org/pub/fedora/linux/releases/42/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-42-1.1.x86_64.qcow2"
+          
+          # Authentication
+          ssh_public_key_file = "{{ ssh_public_key_file | default('~/.ssh/id_rsa.pub') }}"
+          ssh_user            = "{{ ssh_user | default('fedora') }}"
+      when: terraform_provider == "libvirt"
+
+# ============================================================================
+# AWS-SPECIFIC VARIABLES
+# ============================================================================
+    - name: Create Terraform variables file (AWS)
+      ansible.builtin.copy:
+        dest: "{{ terraform_dir }}/terraform.tfvars"
+        mode: '0600'
+        content: |
+          # AWS configuration
+          aws_region        = "{{ aws_region }}"
+          availability_zone = "{{ aws_availability_zone }}"
+          
+          # Network configuration
+          vpc_cidr    = "{{ aws_vpc_cidr }}"
+          subnet_cidr = "{{ aws_subnet_cidr }}"
+          
+          # EC2 Instance settings
+          hostname         = "{{ aws_hostname }}"
+          instance_type    = "{{ aws_instance_type }}"
+          root_volume_size = {{ aws_root_volume_size }}
+          root_volume_type = "{{ aws_root_volume_type }}"
+          
+          # AMI Configuration (leave ami_id empty to auto-select latest Fedora)
+          ami_id          = ""
+          ami_owner       = "125523088429"  # Fedora Project
+          ami_name_pattern = "Fedora-Cloud-Base-AmazonEC2.x86_64-42-*"
+          
+          # Authentication
+          ssh_public_key_file = "{{ ssh_public_key_file | default('~/.ssh/id_rsa.pub') }}"
+          ssh_user            = "{{ ssh_user | default('fedora') }}"
+          key_pair_name       = "k8s-vanilla-key"
+          
+          # Kubernetes Network (used by Ansible)
+          pod_network_cidr = "{{ pod_network_cidr }}"
+          service_cidr     = "{{ service_cidr }}"
+          
+          # Route53 DNS Configuration
+          route53_zone_name = "{{ aws_route53_zone_name | default('') }}"
+      when: terraform_provider == "aws"
+
+# ============================================================================
+# COMMON TERRAFORM OPERATIONS
+# ============================================================================
     - name: Apply Terraform configuration
       ansible.builtin.command:
         cmd: terraform apply -auto-approve

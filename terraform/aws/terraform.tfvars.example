@@ -32,3 +32,7 @@ key_pair_name       = "k8s-vanilla-key"
 pod_network_cidr = "10.244.0.0/16"
 service_cidr     = "10.96.0.0/12"
 
+# Route53 DNS Configuration (optional)
+# Set to your Route53 hosted zone name to create DNS records
+# Leave empty to skip DNS record creation
+route53_zone_name = ""  # e.g., "sandbox1480.opentlc.com"

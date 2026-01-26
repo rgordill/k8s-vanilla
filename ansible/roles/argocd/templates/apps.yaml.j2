@@ -1,13 +1,5 @@
 ---
 # App of Apps pattern - Deploy all applications from this repository
-# NOTE: This file is a reference. The actual deployment uses the Ansible template
-# at ansible/roles/argocd/templates/apps.yaml.j2 which sets the correct
-# Kustomize overlay path based on terraform_provider (aws or libvirt).
-#
-# Example paths:
-#   - aws:     argocd/overlays/aws
-#   - libvirt: argocd/overlays/libvirt
-#
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -21,10 +13,7 @@ spec:
     # Update this to your Git repository URL
     repoURL: https://github.com/rgordill/k8s-vanilla.git
     targetRevision: HEAD
-    # Path is set dynamically by Ansible based on terraform_provider
-    # path: argocd/overlays/aws      # for AWS
-    # path: argocd/overlays/libvirt  # for libvirt
-    path: argocd/overlays/aws
+    path: argocd/overlays/{{ terraform_provider }}
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd

@@ -1,4 +1,13 @@
 .ansible
 
+# Terraform generated files
+terraform/*/terraform.tfvars
+terraform/*/.terraform/
+terraform/*/.terraform.lock.hcl
+terraform/*/terraform.tfstate
+terraform/*/terraform.tfstate.backup
+terraform/*/tfplan
+terraform/*/tfplan.json
+
 # Kubeconfig and cluster artifacts
 kubernetes/
