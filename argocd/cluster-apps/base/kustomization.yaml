@@ -17,27 +17,7 @@ configMapGenerator:
     literals:
       - INGRESS_DOMAIN=INGRESS_DOMAIN_PLACEHOLDER
 
-# Replace INGRESS_DOMAIN_PLACEHOLDER in Application resources with value from global-config
-# This reads from the ConfigMap generated above (which has the placeholder)
-# The actual value comes from the cluster ConfigMap created by Ansible
-replacements:
-  - source:
-      kind: ConfigMap
-      name: global-config
-      fieldPath: data.INGRESS_DOMAIN
-    targets:
-      - select:
-          kind: Application
-          name: kube-prometheus-stack
-        fieldPaths:
-          - spec.source.helm.valuesObject.grafana.ingress.hosts.[0]
-
-# Set initial placeholder value (will be replaced by replacements above)
-patches:
-  - target:
-      kind: Application
-      name: kube-prometheus-stack
-    patch: |-
-      - op: replace
-        path: /spec/source/helm/valuesObject/grafana/ingress/hosts/0
-        value: grafana.INGRESS_DOMAIN_PLACEHOLDER
+# Note: Kustomize replacements cannot directly target array elements by index
+# The base Application already has grafana.INGRESS_DOMAIN_PLACEHOLDER in the hosts array
+# Ansible will update the Application after ArgoCD syncs to use the domain from global-config ConfigMap
+# This ensures the domain from Ansible cascades correctly without requiring kustomization changes
