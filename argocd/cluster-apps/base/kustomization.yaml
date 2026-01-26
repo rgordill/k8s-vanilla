@@ -6,11 +6,20 @@ resources:
   - ../../ingress
   - ../../storage
   - ../../monitoring/base
-  - global-config.yaml
+
+# Generate global-config ConfigMap
+# Note: Ansible creates this ConfigMap directly in the cluster with the actual domain value
+# This ConfigMap in the kustomization is used by replacements to inject values into Applications
+# ArgoCD will ignore differences in this ConfigMap (see cluster-apps Application ignoreDifferences)
+configMapGenerator:
+  - name: global-config
+    namespace: argocd
+    literals:
+      - INGRESS_DOMAIN=INGRESS_DOMAIN_PLACEHOLDER
 
 # Replace INGRESS_DOMAIN_PLACEHOLDER in Application resources with value from global-config
-# The global-config ConfigMap is created by Ansible in the cluster
-# This kustomization references it for replacements
+# This reads from the ConfigMap generated above (which has the placeholder)
+# The actual value comes from the cluster ConfigMap created by Ansible
 replacements:
   - source:
       kind: ConfigMap

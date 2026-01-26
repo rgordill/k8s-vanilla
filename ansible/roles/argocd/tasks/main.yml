@@ -222,6 +222,54 @@
     state: present
     src: /tmp/argocd-apps.yaml
 
+- name: Wait for cluster-apps Application to sync
+  kubernetes.core.k8s_info:
+    api_version: argoproj.io/v1alpha1
+    kind: Application
+    name: cluster-apps
+    namespace: "{{ argocd_namespace }}"
+    kubeconfig: "{{ argocd_kubeconfig }}"
+  register: cluster_apps_status
+  retries: 30
+  delay: 5
+  until: >
+    cluster_apps_status.resources | length > 0 and
+    cluster_apps_status.resources[0].status.sync.status == 'Synced'
+  ignore_errors: true
+
+- name: Wait for kube-prometheus-stack Application to be created
+  kubernetes.core.k8s_info:
+    api_version: argoproj.io/v1alpha1
+    kind: Application
+    name: kube-prometheus-stack
+    namespace: "{{ argocd_namespace }}"
+    kubeconfig: "{{ argocd_kubeconfig }}"
+  register: prometheus_app
+  retries: 30
+  delay: 5
+  until: prometheus_app.resources | length > 0
+  ignore_errors: true
+
+- name: Update kube-prometheus-stack Application with Grafana domain from global-config
+  kubernetes.core.k8s:
+    kubeconfig: "{{ argocd_kubeconfig }}"
+    state: present
+    definition:
+      apiVersion: argoproj.io/v1alpha1
+      kind: Application
+      metadata:
+        name: kube-prometheus-stack
+        namespace: "{{ argocd_namespace }}"
+      spec:
+        source:
+          helm:
+            valuesObject:
+              grafana:
+                ingress:
+                  hosts:
+                    - "grafana.{{ ingress_domain }}"
+  when: prometheus_app.resources | length > 0
+
 - name: Clean up temporary manifest
   ansible.builtin.file:
     path: /tmp/argocd-apps.yaml
