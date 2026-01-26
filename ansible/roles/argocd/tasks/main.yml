@@ -197,6 +197,14 @@
       - "Release: {{ argocd_release_name }}"
       - "Pods: {{ argocd_pods.resources | map(attribute='metadata.name') | list }}"
 
+- name: Template kustomization overlay with ingress domain
+  ansible.builtin.template:
+    src: kustomization-overlay.yaml.j2
+    dest: "{{ playbook_dir | dirname | dirname }}/argocd/cluster-apps/overlays/{{ terraform_provider }}/kustomization.yaml"
+    mode: '0644'
+  delegate_to: localhost
+  run_once: true
+
 - name: Template ArgoCD App of Apps manifest with provider-specific overlay
   ansible.builtin.template:
     src: apps.yaml.j2

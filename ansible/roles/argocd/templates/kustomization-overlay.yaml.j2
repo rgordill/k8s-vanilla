@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+# Generate global-config ConfigMap with ingress domain from Ansible
+# This ConfigMap is created by the root Application and can be referenced by leaf apps
+# Replacements and patches are defined in the base kustomization
+configMapGenerator:
+  - name: global-config
+    namespace: argocd
+    literals:
+      - INGRESS_DOMAIN={{ ingress_domain }}
