@@ -32,3 +32,11 @@ spec:
         duration: 5s
         factor: 2
         maxDuration: 3m
+  # Ignore differences in global-config ConfigMap - it's managed by Ansible
+  ignoreDifferences:
+    - group: ""
+      kind: ConfigMap
+      name: global-config
+      namespace: argocd
+      jsonPointers:
+        - /data/INGRESS_DOMAIN
